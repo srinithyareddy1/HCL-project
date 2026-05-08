@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getRoomById, getHotelById, promotions } from '../services/mockData';
+import { api } from '../services/api';
 import { Shield, Tag, Users, Calendar, ChevronRight, AlertCircle } from 'lucide-react';
 
 const Booking = () => {
   const { roomId } = useParams();
-  const { user, addBooking } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -34,13 +34,20 @@ const Booking = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    const r = getRoomById(parseInt(roomId));
-    setRoom(r);
-    if (r) {
-      const h = getHotelById(r.hotelId);
-      setHotel(h);
-      document.title = `Book ${r.type} – StayLux`;
-    }
+    const fetchDetails = async () => {
+      try {
+        const r = await api.getRoomById(roomId);
+        if (r) {
+          setRoom(r);
+          const h = await api.getHotelById(r.hotelId);
+          setHotel(h);
+          document.title = `Book ${r.type} – StayLux`;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchDetails();
   }, [roomId]);
 
   const nights = (() => {
@@ -51,7 +58,7 @@ const Booking = () => {
 
   const subtotal = room ? room.price * nights : 0;
   const taxes = Math.round(subtotal * 0.12);
-  const discount = appliedPromo ? (appliedPromo.type === 'percentage' ? Math.round(subtotal * appliedPromo.discount / 100) : appliedPromo.discount) : 0;
+  const discount = appliedPromo ? appliedPromo.savings : 0;
   const total = subtotal + taxes - discount;
 
   const validate = () => {
@@ -66,12 +73,15 @@ const Booking = () => {
     return e;
   };
 
-  const applyPromo = () => {
+  const applyPromo = async () => {
     setPromoError('');
-    const found = promotions.find(p => p.code === promoCode.toUpperCase());
-    if (!found) { setPromoError('Invalid promo code.'); return; }
-    setAppliedPromo(found);
-    addToast(`Promo "${found.code}" applied! You save ${found.type==='percentage'?found.discount+'%':'$'+found.discount}`, 'success');
+    try {
+      const res = await api.validatePromo(promoCode, subtotal + taxes);
+      setAppliedPromo(res);
+      addToast(`Promo "${res.code}" applied! You save $${res.savings}`, 'success');
+    } catch (err) {
+      setPromoError(err.message || 'Invalid promo code.');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -80,30 +90,37 @@ const Booking = () => {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    const booking = {
-      id: 'BK' + Date.now(),
-      userId: user.id,
-      hotelId: hotel.id,
-      roomId: room.id,
-      hotelName: hotel.name,
-      hotelImage: hotel.image,
-      roomType: room.type,
-      location: hotel.location,
-      checkIn: form.checkIn,
-      checkOut: form.checkOut,
-      nights,
-      guests: parseInt(form.guests),
-      totalAmount: total,
-      status: 'upcoming',
-      confirmationNumber: `SL-${Date.now().toString().slice(-8)}`,
-      createdAt: new Date().toISOString().split('T')[0],
-      guestName: `${form.firstName} ${form.lastName}`,
-      guestEmail: form.email,
-    };
-    addBooking(booking);
-    setLoading(false);
-    navigate('/confirmation', { state: { booking } });
+    try {
+      const res = await api.bookRoom({
+        roomId: room.id,
+        checkIn: form.checkIn,
+        checkOut: form.checkOut,
+        promoCode: appliedPromo ? appliedPromo.code : null,
+      });
+      addToast("Booking Confirmed!", "success");
+
+      const mappedBooking = {
+        id: res.id,
+        guestEmail: form.email,
+        hotelImage: hotel.image,
+        hotelName: hotel.name,
+        location: hotel.location,
+        roomType: room.type,
+        confirmationNumber: res.id ? `GS-BK-${res.id}` : `GS-BK-${Date.now()}`,
+        checkIn: form.checkIn,
+        checkOut: form.checkOut,
+        guests: parseInt(form.guests),
+        nights: nights,
+        totalAmount: total,
+        status: 'confirmed'
+      };
+
+      navigate('/confirmation', { state: { booking: mappedBooking } });
+    } catch (err) {
+      addToast(err.message || "Failed to book room", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!room || !hotel) return (

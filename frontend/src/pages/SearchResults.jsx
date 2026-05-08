@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import HotelCard from '../components/HotelCard';
 import SearchBar from '../components/SearchBar';
-import { searchHotels } from '../services/mockData';
+import { api } from '../services/api';
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const AMENITY_OPTIONS = ['Free WiFi','Pool','Spa','Gym','Restaurant','Bar','Parking','Airport Shuttle'];
@@ -28,15 +28,26 @@ const SearchResults = () => {
   useEffect(() => {
     document.title = `Hotels${location ? ' in ' + location : ''} – StayLux`;
     setLoading(true);
-    setTimeout(() => {
-      let found = searchHotels({ location, checkIn, checkOut, guests: parseInt(guests), minPrice: priceRange.min, maxPrice: priceRange.max, amenities: selectedAmenities });
-      if (category) found = found.filter(h => h.category === category);
-      if (sortBy === 'price-asc') found = [...found].sort((a,b) => a.pricePerNight - b.pricePerNight);
-      else if (sortBy === 'price-desc') found = [...found].sort((a,b) => b.pricePerNight - a.pricePerNight);
-      else if (sortBy === 'rating') found = [...found].sort((a,b) => b.rating - a.rating);
-      setResults(found);
-      setLoading(false);
-    }, 500);
+
+    api.searchHotels({ location })
+      .then(data => {
+        let found = data;
+        if (category) found = found.filter(h => h.category === category);
+        if (priceRange.max !== 9999) {
+          found = found.filter(h => h.pricePerNight >= priceRange.min && h.pricePerNight <= priceRange.max);
+        }
+        if (selectedAmenities.length > 0) {
+          found = found.filter(h => selectedAmenities.every(a => h.amenities.includes(a)));
+        }
+
+        if (sortBy === 'price-asc') found = [...found].sort((a,b) => a.pricePerNight - b.pricePerNight);
+        else if (sortBy === 'price-desc') found = [...found].sort((a,b) => b.pricePerNight - a.pricePerNight);
+        else if (sortBy === 'rating') found = [...found].sort((a,b) => b.rating - a.rating);
+        
+        setResults(found);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [location, checkIn, checkOut, guests, category, priceRange, selectedAmenities, sortBy]);
 
   useEffect(() => { setCurrentPage(1); }, [location, category, priceRange, selectedAmenities, sortBy]);
@@ -169,7 +180,7 @@ const SearchResults = () => {
         .filter-option{display:flex;align-items:center;gap:10px;font-size:0.88rem;color:var(--text-secondary);cursor:pointer;}
         .filter-option input{accent-color:var(--primary);}
         .filter-option:hover{color:var(--text-primary);}
-        .results-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
+        .results-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:20px;}
 
         /* Pagination */
         .pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:28px;padding-top:20px;border-top:1px solid var(--border);}
@@ -191,13 +202,10 @@ const SearchResults = () => {
 
         @media(max-width:900px){
           .search-layout{grid-template-columns:1fr;}
-          .results-grid{grid-template-columns:repeat(3,1fr);}
         }
         @media(max-width:600px){
-          .results-grid{grid-template-columns:repeat(2,1fr);}
           .pagination{flex-direction:column;align-items:center;}
         }
-        @media(max-width:400px){.results-grid{grid-template-columns:1fr;}}
       `}</style>
     </div>
   );

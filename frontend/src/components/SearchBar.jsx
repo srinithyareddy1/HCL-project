@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, Users } from 'lucide-react';
-import { hotels } from '../services/mockData';
+import { api } from '../services/api';
 
 const SearchBar = ({ initialValues = {}, compact = false }) => {
   const navigate = useNavigate();
@@ -10,13 +10,15 @@ const SearchBar = ({ initialValues = {}, compact = false }) => {
   const [checkOut, setCheckOut] = useState(initialValues.checkOut || '');
   const [guests, setGuests] = useState(initialValues.guests || '2');
   const [errors, setErrors] = useState({});
+  const [locations, setLocations] = useState([]);
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Build unique locations from hotel data
-  const locations = useMemo(() => {
-    const unique = [...new Set(hotels.map(h => h.location))];
-    return unique.sort();
+  useEffect(() => {
+    api.getHotels().then(data => {
+      const unique = [...new Set(data.map(h => h.location))].filter(Boolean);
+      setLocations(unique.sort());
+    }).catch(console.error);
   }, []);
 
   const validate = () => {

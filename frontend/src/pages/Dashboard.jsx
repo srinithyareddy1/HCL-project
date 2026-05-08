@@ -11,7 +11,7 @@ const statusConfig = {
 };
 
 const Dashboard = () => {
-  const { user, bookings, cancelBooking, logout } = useAuth();
+  const { user, bookings, loyalty, cancelBooking, logout } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
@@ -26,17 +26,24 @@ const Dashboard = () => {
 
   const filtered = activeTab === 'all' ? bookings : bookings.filter(b => b.status === activeTab);
 
-  const handleCancel = (id) => {
-    cancelBooking(id);
+  const handleCancel = async (id) => {
+    const success = await cancelBooking(id);
     setCancelId(null);
-    addToast('Booking cancelled successfully.', 'success');
+    if (success) {
+      addToast('Booking cancelled successfully.', 'success');
+    } else {
+      addToast('Failed to cancel booking.', 'error');
+    }
   };
+
+  const loyaltyPoints = loyalty?.points || 0;
+  const loyaltyTier = loyalty?.tier || 'Silver';
 
   const stats = [
     { icon: '🏨', label: 'Total Bookings', value: bookings.length },
     { icon: '✈️', label: 'Upcoming Stays', value: bookings.filter(b => b.status === 'upcoming').length },
     { icon: '✅', label: 'Completed Stays', value: bookings.filter(b => b.status === 'completed').length },
-    { icon: '⭐', label: 'Loyalty Points', value: user.loyaltyPoints.toLocaleString() },
+    { icon: '⭐', label: 'Loyalty Points', value: loyaltyPoints.toLocaleString() },
   ];
 
   return (
@@ -52,7 +59,7 @@ const Dashboard = () => {
               Welcome back, <span className="text-gradient">{user.name.split(' ')[0]}</span>
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Member since {new Date(user.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} · <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.tier} Member</span>
+              Member since {new Date(user.memberSince || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} · <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{loyaltyTier} Member</span>
             </p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -166,19 +173,19 @@ const Dashboard = () => {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '1rem' }}>{user.name}</div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{user.email}</div>
-                  <span className="badge badge-gold" style={{ marginTop: '4px', fontSize: '10px' }}>{user.tier} Member</span>
+                  <span className="badge badge-gold" style={{ marginTop: '4px', fontSize: '10px' }}>{loyaltyTier} Member</span>
                 </div>
               </div>
               <div style={{ background: 'var(--surface-2)', borderRadius: 'var(--radius-md)', padding: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Loyalty Points</span>
-                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{user.loyaltyPoints.toLocaleString()}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{loyaltyPoints.toLocaleString()}</span>
                 </div>
-                <div style={{ height: '6px', background: 'var(--surface-3)', borderRadius: '3px', overflow: 'hidden' }} role="progressbar" aria-valuenow={user.loyaltyPoints} aria-valuemin={0} aria-valuemax={5000} aria-label={`Loyalty points: ${user.loyaltyPoints} of 5000`}>
-                  <div style={{ height: '100%', width: `${Math.min((user.loyaltyPoints / 5000) * 100, 100)}%`, background: 'linear-gradient(90deg,var(--primary-light),var(--primary))', borderRadius: '3px' }} />
+                <div style={{ height: '6px', background: 'var(--surface-3)', borderRadius: '3px', overflow: 'hidden' }} role="progressbar" aria-valuenow={loyaltyPoints} aria-valuemin={0} aria-valuemax={5000} aria-label={`Loyalty points: ${loyaltyPoints} of 5000`}>
+                  <div style={{ height: '100%', width: `${Math.min((loyaltyPoints / 5000) * 100, 100)}%`, background: 'linear-gradient(90deg,var(--primary-light),var(--primary))', borderRadius: '3px' }} />
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                  {5000 - user.loyaltyPoints} pts to Platinum
+                  {5000 - loyaltyPoints} pts to Platinum
                 </div>
               </div>
             </div>

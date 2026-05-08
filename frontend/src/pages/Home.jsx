@@ -2,20 +2,37 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import HotelCard from '../components/HotelCard';
-import { hotels, promotions } from '../services/mockData';
+import { api } from '../services/api';
 import { Sparkles, TrendingUp, Shield, Star, Tag, ChevronRight } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Luxury', 'Resort', 'Business', 'Safari', 'Boutique'];
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [hotels, setHotels] = useState([]);
+  const [promotions, setPromotions] = useState([]);
   const [visibleHotels, setVisibleHotels] = useState([]);
 
   useEffect(() => {
     document.title = 'StayLux – Premium Hotel Booking';
+    const fetchData = async () => {
+      try {
+        const hData = await api.getHotels();
+        const pData = await api.getActivePromotions();
+        setHotels(hData);
+        setPromotions(pData);
+        setVisibleHotels(hData.slice(0, 6));
+      } catch (err) {
+        console.error("Failed to fetch home data", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
     const filtered = activeCategory === 'All' ? hotels : hotels.filter(h => h.category === activeCategory);
     setVisibleHotels(filtered.slice(0, 6));
-  }, [activeCategory]);
+  }, [activeCategory, hotels]);
 
   const featuredHotels = hotels.filter(h => h.featured).slice(0, 3);
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getHotelById, rooms } from '../services/mockData';
+import { api } from '../services/api';
 import RoomCard from '../components/RoomCard';
 import { MapPin, Star, Users, Wifi, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 
@@ -23,12 +23,16 @@ const HotelDetail = () => {
 
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
-      const h = getHotelById(parseInt(id));
-      setHotel(h || null);
-      setHotelRooms(rooms[parseInt(id)] || []);
-      setLoading(false);
-    }, 300);
+    Promise.all([
+      api.getHotelById(id),
+      api.getRoomsByHotel(id)
+    ])
+      .then(([h, r]) => {
+        setHotel(h);
+        setHotelRooms(r);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [id]);
 
   useEffect(() => {
