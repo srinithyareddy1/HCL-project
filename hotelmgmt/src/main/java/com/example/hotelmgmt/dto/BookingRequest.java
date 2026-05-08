@@ -9,4 +9,5 @@ public class BookingRequest {
     private LocalDate checkIn;
     private LocalDate checkOut;
     private String    promoCode; // optional
+    private String    foodPreference;
 }

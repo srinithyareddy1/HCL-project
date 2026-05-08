@@ -66,6 +66,10 @@ public class BookingService {
         booking.setRoom(room); booking.setUser(user);
         booking.setCheckIn(request.getCheckIn()); booking.setCheckOut(request.getCheckOut());
         booking.setTotalPrice(finalTotal); booking.setStatus("CONFIRMED");
+        if (request.getFoodPreference() == null || request.getFoodPreference().isBlank()) {
+            throw new RuntimeException("Food preference is required (Breakfast, Lunch, or Dinner).");
+        }
+        booking.setFoodPreference(request.getFoodPreference());
         bookingRepository.save(booking);
 
         // Post-booking async tasks
@@ -117,6 +121,7 @@ public class BookingService {
         req.setRoomId(original.getRoom().getId());
         req.setCheckIn(newCheckIn);
         req.setCheckOut(newCheckOut);
+        req.setFoodPreference(original.getFoodPreference());
         return bookRoom(req, token);
     }
 }

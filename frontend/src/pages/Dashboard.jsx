@@ -137,6 +137,9 @@ const Dashboard = () => {
                           <span><Calendar size={12} /> Check-in: <strong>{new Date(booking.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong></span>
                           <span>→</span>
                           <span>Check-out: <strong>{new Date(booking.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong></span>
+                          {booking.foodPreference && booking.foodPreference !== 'None' && (
+                            <span style={{marginLeft: '10px'}}>🍽️ <strong>{booking.foodPreference}</strong></span>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <Hash size={11} /> {booking.confirmationNumber}

@@ -60,6 +60,7 @@ const Confirmation = () => {
               { icon: <Calendar size={15}/>, label: 'Check-out', value: new Date(booking.checkOut).toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'}) },
               { icon: <Users size={15}/>, label: 'Guests', value: `${booking.guests} guest${booking.guests>1?'s':''}` },
               { icon: <span>🌙</span>, label: 'Duration', value: `${booking.nights} night${booking.nights>1?'s':''}` },
+              { icon: <span>🍽️</span>, label: 'Food', value: booking.foodPreference || 'None' },
               { icon: <span>💳</span>, label: 'Total Paid', value: `$${booking.totalAmount.toLocaleString()}` },
             ].map(item => (
               <div key={item.label} className="conf-detail-item">

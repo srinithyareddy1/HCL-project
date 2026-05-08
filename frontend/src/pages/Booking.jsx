@@ -29,6 +29,7 @@ const Booking = () => {
     checkIn: today,
     checkOut: tomorrow,
     guests: '2',
+    foodPreference: '',
     specialRequests: '',
   });
   const [errors, setErrors] = useState({});
@@ -70,6 +71,7 @@ const Booking = () => {
     if (!form.checkIn) e.checkIn = 'Required';
     if (!form.checkOut) e.checkOut = 'Required';
     if (form.checkOut <= form.checkIn) e.checkOut = 'Must be after check-in';
+    if (!form.foodPreference) e.foodPreference = 'Please select a food preference';
     return e;
   };
 
@@ -95,6 +97,7 @@ const Booking = () => {
         roomId: room.id,
         checkIn: form.checkIn,
         checkOut: form.checkOut,
+        foodPreference: form.foodPreference,
         promoCode: appliedPromo ? appliedPromo.code : null,
       });
       addToast("Booking Confirmed!", "success");
@@ -110,6 +113,7 @@ const Booking = () => {
         checkIn: form.checkIn,
         checkOut: form.checkOut,
         guests: parseInt(form.guests),
+        foodPreference: form.foodPreference,
         nights: nights,
         totalAmount: total,
         status: 'confirmed'
@@ -200,6 +204,18 @@ const Booking = () => {
                       {[1,2,3,4].map(n=><option key={n} value={n}>{n} Guest{n>1?'s':''}</option>)}
                     </select>
                   </div>
+                </div>
+                <div className="form-group" style={{marginTop:'16px'}}>
+                  <label className="form-label">Food Preference <span style={{color:'var(--danger)'}}>*</span></label>
+                  <div style={{display:'flex', gap:'16px', marginTop:'8px'}}>
+                    {['None', 'Breakfast Only', 'Breakfast & Dinner', 'All Inclusive (B, L, D)'].map(pref => (
+                      <label key={pref} style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'0.85rem'}}>
+                        <input type="radio" name="foodPreference" value={pref} checked={form.foodPreference === pref} onChange={e=>setForm(f=>({...f,foodPreference:e.target.value}))}/>
+                        {pref}
+                      </label>
+                    ))}
+                  </div>
+                  {errors.foodPreference && <span className="form-error">{errors.foodPreference}</span>}
                 </div>
                 <div className="form-group" style={{marginTop:'16px'}}>
                   <label className="form-label">Special Requests (optional)</label>

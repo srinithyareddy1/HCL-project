@@ -20,6 +20,8 @@ public class Booking {
     @Column(nullable = false)
     private String status = "CONFIRMED";
 
+    private String foodPreference;
+
     @ManyToOne
     @JoinColumn(name = "room_id")
     private Room room;

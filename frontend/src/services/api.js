@@ -98,6 +98,7 @@ export const mapBooking = (b) => {
     checkOut: b.checkOut,
     nights: Math.ceil((new Date(b.checkOut) - new Date(b.checkIn)) / (1000 * 60 * 60 * 24)),
     guests: b.room ? b.room.capacity : 2,
+    foodPreference: b.foodPreference || "None",
     totalAmount: b.totalPrice || b.finalPrice || 0,
     status: displayStatus,
     confirmationNumber: `GS-BK-${b.id}`,
