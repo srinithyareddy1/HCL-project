@@ -78,25 +78,32 @@ export const mapPromo = (p) => ({
   validUntil: p.validUntil,
 });
 
-// Map backend booking
-export const mapBooking = (b) => ({
-  id: b.id,
-  userId: b.user ? b.user.id : null,
-  hotelId: b.room && b.room.hotel ? b.room.hotel.id : null,
-  roomId: b.room ? b.room.id : null,
-  hotelName: b.room && b.room.hotel ? b.room.hotel.name : "GrandStay Hotel",
-  hotelImage: b.room && b.room.hotel ? b.room.hotel.imageUrl : null,
-  roomType: b.room ? b.room.roomType : "Room",
-  location: b.room && b.room.hotel ? b.room.hotel.location : "",
-  checkIn: b.checkIn,
-  checkOut: b.checkOut,
-  nights: Math.ceil((new Date(b.checkOut) - new Date(b.checkIn)) / (1000 * 60 * 60 * 24)),
-  guests: b.room ? b.room.capacity : 2,
-  totalAmount: b.finalPrice,
-  status: b.status ? b.status.toLowerCase() : "confirmed",
-  confirmationNumber: `GS-BK-${b.id}`,
-  createdAt: new Date().toISOString().split('T')[0]
-});
+export const mapBooking = (b) => {
+  let displayStatus = b.status ? b.status.toLowerCase() : "confirmed";
+  if (displayStatus === 'confirmed') {
+    const today = new Date().toISOString().split('T')[0];
+    displayStatus = b.checkOut < today ? 'completed' : 'upcoming';
+  }
+
+  return {
+    id: b.id,
+    userId: b.user ? b.user.id : null,
+    hotelId: b.room && b.room.hotel ? b.room.hotel.id : null,
+    roomId: b.room ? b.room.id : null,
+    hotelName: b.room && b.room.hotel ? b.room.hotel.name : "GrandStay Hotel",
+    hotelImage: b.room && b.room.hotel ? b.room.hotel.imageUrl : null,
+    roomType: b.room ? b.room.roomType : "Room",
+    location: b.room && b.room.hotel ? b.room.hotel.location : "",
+    checkIn: b.checkIn,
+    checkOut: b.checkOut,
+    nights: Math.ceil((new Date(b.checkOut) - new Date(b.checkIn)) / (1000 * 60 * 60 * 24)),
+    guests: b.room ? b.room.capacity : 2,
+    totalAmount: b.totalPrice || b.finalPrice || 0,
+    status: displayStatus,
+    confirmationNumber: `GS-BK-${b.id}`,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+};
 
 export const api = {
   // Auth
